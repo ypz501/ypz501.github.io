@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Cost Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+        }
+        .form-group input {
+            width: calc(100% - 20px);
+            padding: 8px;
+        }
+        .form-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-actions button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .total-cost {
+            text-align: right;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>成 本 花 費 計 算</h1>
+
+    <div class="form-group">
+        <label for="material">名稱：</label>
+        <input type="text" id="material" placeholder="輸入名稱">
+    </div>
+
+    <div class="form-group">
+        <label for="cost">花費：</label>
+        <input type="number" id="cost" placeholder="輸入花費">
+    </div>
+
+    <div class="form-actions">
+        <button onclick="addMaterial()">新增</button>
+        <button onclick="clearForm()">清除</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>名稱</th>
+                <th>花費</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="material-list">
+        </tbody>
+    </table>
+
+    <div class="total-cost" id="total-cost">
+        Total Cost: $0
+    </div>
+
+    <script>
+        let materials = [];
+        let editIndex = null;
+
+        function addMaterial() {
+            const materialInput = document.getElementById('material');
+            const costInput = document.getElementById('cost');
+
+            const material = materialInput.value.trim();
+            const cost = parseFloat(costInput.value);
+
+            if (material === '' || isNaN(cost) || cost <= 0) {
+                alert('Please enter valid material and cost.');
+                return;
+            }
+
+            if (editIndex !== null) {
+                materials[editIndex] = { material, cost };
+                editIndex = null;
+            } else {
+                materials.push({ material, cost });
+            }
+
+            renderTable();
+            clearForm();
+        }
+
+        function deleteMaterial(index) {
+            materials.splice(index, 1);
+            renderTable();
+        }
+
+        function editMaterial(index) {
+            const material = materials[index];
+            document.getElementById('material').value = material.material;
+            document.getElementById('cost').value = material.cost;
+            editIndex = index;
+        }
+
+        function renderTable() {
+            const materialList = document.getElementById('material-list');
+            materialList.innerHTML = '';
+
+            let totalCost = 0;
+
+            materials.forEach((item, index) => {
+                totalCost += item.cost;
+                materialList.innerHTML += `
+                    <tr>
+                        <td>${item.material}</td>
+                        <td>$${item.cost}</td>
+                        <td>
+                            <button onclick="editMaterial(${index})">編輯</button>
+                            <button onclick="deleteMaterial(${index})">刪除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('total-cost').textContent = `Total Cost: $${totalCost}`;
+        }
+
+        function clearForm() {
+            document.getElementById('material').value = '';
+            document.getElementById('cost').value = '';
+            editIndex = null;
+        }
+    </script>
+</body>
+</html>
