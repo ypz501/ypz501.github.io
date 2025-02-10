@@ -12,20 +12,32 @@
         h1 {
             text-align: center;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .category {
             margin-top: 20px;
-        }
-        table, th, td {
             border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
         }
-        th, td {
-            padding: 8px;
-            text-align: left;
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            background-color: #e2e6ea;
+            border-radius: 8px;
         }
-        th {
-            background-color: #f4f4f4;
+        .category-header h2 {
+            margin: 0;
+        }
+        .toggle-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
         }
         .form-group {
             margin-bottom: 10px;
@@ -39,16 +51,45 @@
         }
         .form-actions {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .form-actions button {
             padding: 10px 20px;
             margin: 0 5px;
             cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .hidden {
+            display: none;
         }
         .total-cost {
             text-align: right;
             margin-top: 20px;
+            font-weight: bold;
+        }
+        .progress {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .progress span {
             font-weight: bold;
         }
     </style>
@@ -57,102 +98,173 @@
     <h1>成 本 花 費 計 算</h1>
 
     <div class="form-group">
-        <label for="material">名稱：</label>
-        <input type="text" id="material" placeholder="輸入名稱">
+        <label for="category">大標題名稱：</label>
+        <input type="text" id="category" placeholder="輸入大標題名稱">
     </div>
 
     <div class="form-group">
-        <label for="cost">花費：</label>
-        <input type="number" id="cost" placeholder="輸入花費">
+        <label for="category-budget">大標題預算：</label>
+        <input type="number" id="category-budget" placeholder="輸入大標題預算">
     </div>
 
     <div class="form-actions">
-        <button onclick="addMaterial()">新增</button>
-        <button onclick="clearForm()">清除</button>
+        <button onclick="addCategory()">新增大標題</button>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>名稱</th>
-                <th>花費</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="material-list">
-        </tbody>
-    </table>
+    <div id="categories"></div>
 
     <div class="total-cost" id="total-cost">
-        Total Cost: $0
+        總成本: $0
     </div>
 
     <script>
-        let materials = [];
-        let editIndex = null;
+        let categories = [];
 
-        function addMaterial() {
-            const materialInput = document.getElementById('material');
-            const costInput = document.getElementById('cost');
+        function addCategory() {
+            const categoryInput = document.getElementById('category');
+            const categoryBudgetInput = document.getElementById('category-budget');
+            const categoryName = categoryInput.value.trim();
+            const categoryBudget = parseFloat(categoryBudgetInput.value);
+
+            if (categoryName === '' || isNaN(categoryBudget) || categoryBudget <= 0) {
+                alert('請輸入有效的大標題名稱與預算');
+                return;
+            }
+
+            const category = {
+                name: categoryName,
+                items: [],
+                budget: categoryBudget
+            };
+
+            categories.push(category);
+            renderCategories();
+            categoryInput.value = '';
+            categoryBudgetInput.value = '';
+        }
+
+        function addItem(categoryIndex) {
+            const materialInput = document.getElementById(`material-${categoryIndex}`);
+            const costInput = document.getElementById(`cost-${categoryIndex}`);
 
             const material = materialInput.value.trim();
             const cost = parseFloat(costInput.value);
 
             if (material === '' || isNaN(cost) || cost <= 0) {
-                alert('Please enter valid material and cost.');
+                alert('請輸入有效的名稱與花費');
                 return;
             }
 
-            if (editIndex !== null) {
-                materials[editIndex] = { material, cost };
-                editIndex = null;
-            } else {
-                materials.push({ material, cost });
-            }
-
-            renderTable();
-            clearForm();
+            categories[categoryIndex].items.push({ material, cost });
+            renderCategories();
         }
 
-        function deleteMaterial(index) {
-            materials.splice(index, 1);
-            renderTable();
+        function editItem(categoryIndex, itemIndex) {
+            const material = categories[categoryIndex].items[itemIndex].material;
+            const cost = categories[categoryIndex].items[itemIndex].cost;
+
+            const materialInput = document.getElementById(`material-${categoryIndex}`);
+            const costInput = document.getElementById(`cost-${categoryIndex}`);
+
+            materialInput.value = material;
+            costInput.value = cost;
+
+            // Save changes when clicking "新增項目"
+            document.getElementById(`add-item-${categoryIndex}`).onclick = function () {
+                const newMaterial = materialInput.value.trim();
+                const newCost = parseFloat(costInput.value);
+
+                if (newMaterial === '' || isNaN(newCost) || newCost <= 0) {
+                    alert('請輸入有效的名稱與花費');
+                    return;
+                }
+
+                categories[categoryIndex].items[itemIndex] = { material: newMaterial, cost: newCost };
+                renderCategories();
+            };
         }
 
-        function editMaterial(index) {
-            const material = materials[index];
-            document.getElementById('material').value = material.material;
-            document.getElementById('cost').value = material.cost;
-            editIndex = index;
+        function deleteItem(categoryIndex, itemIndex) {
+            categories[categoryIndex].items.splice(itemIndex, 1);
+            renderCategories();
         }
 
-        function renderTable() {
-            const materialList = document.getElementById('material-list');
-            materialList.innerHTML = '';
+        function toggleVisibility(categoryIndex) {
+            const contentDiv = document.getElementById(`content-${categoryIndex}`);
+            contentDiv.classList.toggle('hidden');
+        }
+
+        function renderCategories() {
+            const categoriesDiv = document.getElementById('categories');
+            categoriesDiv.innerHTML = '';
 
             let totalCost = 0;
 
-            materials.forEach((item, index) => {
-                totalCost += item.cost;
-                materialList.innerHTML += `
-                    <tr>
-                        <td>${item.material}</td>
-                        <td>$${item.cost}</td>
-                        <td>
-                            <button onclick="editMaterial(${index})">編輯</button>
-                            <button onclick="deleteMaterial(${index})">刪除</button>
-                        </td>
-                    </tr>
+            categories.forEach((category, categoryIndex) => {
+                let categoryCost = 0;
+                category.items.forEach(item => {
+                    categoryCost += item.cost;
+                });
+                totalCost += categoryCost;
+
+                const percentageUsed = ((categoryCost / category.budget) * 100).toFixed(2);
+                const progress = `<div class="progress">已使用預算: <span>${percentageUsed}%</span></div>`;
+
+                const categoryHtml = `
+                    <div class="category">
+                        <div class="category-header" onclick="toggleVisibility(${categoryIndex})">
+                            <h2>${category.name}</h2>
+                            <button class="toggle-button">收合</button>
+                        </div>
+                        <div id="content-${categoryIndex}" class="hidden">
+                            <div class="form-group">
+                                <label for="material-${categoryIndex}">名稱：</label>
+                                <input type="text" id="material-${categoryIndex}" placeholder="輸入名稱">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cost-${categoryIndex}">花費：</label>
+                                <input type="number" id="cost-${categoryIndex}" placeholder="輸入花費">
+                            </div>
+
+                            <div class="form-actions">
+                                <button id="add-item-${categoryIndex}" onclick="addItem(${categoryIndex})">新增項目</button>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>名稱</th>
+                                        <th>花費</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${category.items.map((item, itemIndex) => `
+                                        <tr>
+                                            <td>${item.material}</td>
+                                            <td>$${item.cost.toFixed(2)}</td>
+                                            <td>
+                                                <button onclick="editItem(${categoryIndex}, ${itemIndex})">編輯</button>
+                                                <button onclick="deleteItem(${categoryIndex}, ${itemIndex})">刪除</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+
+                            <div class="total-cost">
+                                小計: $${categoryCost.toFixed(2)} / 預算: $${category.budget.toFixed(2)}
+                            </div>
+                            ${progress}
+                        </div>
+                    </div>
                 `;
+
+                categoriesDiv.innerHTML += categoryHtml;
             });
 
-            document.getElementById('total-cost').textContent = `Total Cost: $${totalCost}`;
-        }
-
-        function clearForm() {
-            document.getElementById('material').value = '';
-            document.getElementById('cost').value = '';
-            editIndex = null;
+            document.getElementById('total-cost').textContent = `總成本: $${totalCost.toFixed(2)}`;
         }
     </script>
 </body>
