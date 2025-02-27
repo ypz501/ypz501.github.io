@@ -1,10 +1,13 @@
 n = 0
 
-try：
-	while input() == "Hello World":
-    	n += 1
+while True:
+    
+	try：
+    	H = input()
+        if H == "Hello World":
+    		n += 1
         
-except EOFError:
-	pass
+	except EOFError:
+		break
       
 print(f"Hello World * {n}")
