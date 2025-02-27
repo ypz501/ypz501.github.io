@@ -5,6 +5,6 @@ try：
     	n += 1
         
 except EOFError:
-	break  
+	pass
       
 print(f"Hello World * {n}")
